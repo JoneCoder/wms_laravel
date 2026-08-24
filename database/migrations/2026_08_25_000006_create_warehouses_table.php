@@ -6,28 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
-            $table->string('sku')->unique();
+            $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
+            $table->string('code');
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('unit');
+            $table->text('address')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->integer('low_stock_threshold')->default(0);
             $table->timestamps();
+
+            $table->unique(['organization_id', 'code']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('warehouses');
     }
 };
