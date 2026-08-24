@@ -69,7 +69,7 @@ class AuthService
             $token = $user->createToken('auth_token')->plainTextToken;
 
             // Load user relationships for the response
-            $user->load('role.permissions', 'organization');
+            $user->load(['role.permissions:id,name', 'organization']);
 
             return [
                 'user' => $user,
@@ -92,7 +92,7 @@ class AuthService
         $token = $user->createToken('auth_token')->plainTextToken;
 
         // Load user relationships for the response
-        $user->load('role.permissions', 'organization');
+        $user->load(['role.permissions:id,name', 'organization']);
 
         return [
             'user' => $user,

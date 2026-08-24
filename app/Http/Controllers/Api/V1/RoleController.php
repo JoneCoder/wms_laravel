@@ -34,9 +34,13 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         try {
+            $perPage = $request->input('per_page', 15);
+            $search = $request->input('search');
+            $roles = $this->roleService->paginateRoles($perPage, $search);
+
             return response()->json([
                 'success' => true,
-                'data' => $this->roleService->getAllRoles()
+                'data' => $roles
             ]);
         } catch (\Exception $e) {
             return response()->json([

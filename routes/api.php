@@ -28,7 +28,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/user', function (Request $request) {
             return response()->json([
                 'success' => true,
-                'data' => $request->user()->load('role.permissions', 'organization')
+                'data' => $request->user()->load(['role.permissions:id,name', 'organization'])
             ]);
         });
 

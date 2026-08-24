@@ -23,7 +23,10 @@ class UpdateWarehouseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'code' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
+            'address' => 'nullable|string',
+            'status' => 'sometimes|in:active,inactive'
         ];
     }
 }

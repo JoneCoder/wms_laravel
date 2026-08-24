@@ -13,6 +13,11 @@ class RoleService
         protected RoleRepositoryInterface $roleRepository
     ) {}
 
+    public function paginateRoles(int $perPage = 15, ?string $search = null): LengthAwarePaginator
+    {
+        return $this->roleRepository->paginate($perPage, $search);
+    }
+
     public function getAllRoles()
     {
         return $this->roleRepository->getAllWithPermissions();

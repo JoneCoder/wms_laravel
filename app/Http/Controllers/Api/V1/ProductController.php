@@ -3,20 +3,51 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Product;
+use App\DTOs\ProductDTO;
+use App\Services\ProductService;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
+    /**
+     * @OA\Get(
+     *      path="/api/v1/products",
+     *      operationId="getProductsList",
+     *      tags={"Products"},
+     *      summary="Get list of products",
+     *      description="Returns list of products paginated",
+     *      security={{"sanctum":{}}},
+     *      @OA\Parameter(
+     *          name="per_page",
+     *          in="query",
+     *          description="Number of items per page",
+     *          required=false,
+     *          @OA\Schema(type="integer", default=15)
+     *      ),
+     *      @OA\Response(response=200, description="Successful operation"),
+     *      @OA\Response(response=401, description="Unauthenticated"),
+     *      @OA\Response(response=403, description="Forbidden")
+     * )
+     */
     public function index(Request $request)
     {
         try {
-            // Global scope ensures we only see our organization's products
-            $products = Product::paginate($request->per_page ?? 15);
-            return response()->json(['success' => true, 'data' => $products]);
-            } catch (\Exception $e) {
+            $perPage = $request->per_page ?? 15;
+            $search = $request->input('search');
+            $products = $this->productService->getProducts($perPage, $search);
+
+            return response()->json([
+                'success' => true,
+                'data' => $products
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred.',
@@ -25,27 +56,43 @@ class ProductController extends Controller
         }
     }
 
-    public function store(Request $request)
+    /**
+     * @OA\Post(
+     *      path="/api/v1/products",
+     *      operationId="storeProduct",
+     *      tags={"Products"},
+     *      summary="Create new product",
+     *      description="Creates a new product record",
+     *      security={{"sanctum":{}}},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"sku", "name"},
+     *              @OA\Property(property="sku", type="string", example="SKU-1001"),
+     *              @OA\Property(property="name", type="string", example="Widget A"),
+     *              @OA\Property(property="description", type="string", example="A useful widget"),
+     *              @OA\Property(property="unit", type="string", example="pcs"),
+     *              @OA\Property(property="status", type="string", enum={"active", "inactive"}, example="active"),
+     *              @OA\Property(property="low_stock_threshold", type="integer", example=10)
+     *          )
+     *      ),
+     *      @OA\Response(response=201, description="Successful operation"),
+     *      @OA\Response(response=401, description="Unauthenticated"),
+     *      @OA\Response(response=403, description="Forbidden"),
+     *      @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function store(StoreProductRequest $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'sku' => 'required|string|max:255',
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'unit' => 'nullable|string',
-                'status' => 'nullable|in:active,inactive',
-                'low_stock_threshold' => 'nullable|integer|min:0'
-            ]);
+            $dto = ProductDTO::fromRequest($request);
+            $product = $this->productService->createProduct($dto);
 
-            if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => 'Validation error', 'errors' => $validator->errors()], 422);
-            }
-
-            // organization_id will be automatically injected by BelongsToOrganization trait
-            $product = Product::create($request->all());
-
-            return response()->json(['success' => true, 'data' => $product], 201);
-            } catch (\Exception $e) {
+            return response()->json([
+                'success' => true, 
+                'data' => $product
+            ], 201);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred.',
@@ -54,11 +101,35 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *      path="/api/v1/products/{product}",
+     *      operationId="getProductById",
+     *      tags={"Products"},
+     *      summary="Get product information",
+     *      description="Returns product data",
+     *      security={{"sanctum":{}}},
+     *      @OA\Parameter(
+     *          name="product",
+     *          description="Product id",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=200, description="Successful operation"),
+     *      @OA\Response(response=401, description="Unauthenticated"),
+     *      @OA\Response(response=403, description="Forbidden"),
+     *      @OA\Response(response=404, description="Resource Not Found")
+     * )
+     */
     public function show(Product $product)
     {
         try {
-            return response()->json(['success' => true, 'data' => $product]);
-            } catch (\Exception $e) {
+            return response()->json([
+                'success' => true, 
+                'data' => $product
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred.',
@@ -67,24 +138,50 @@ class ProductController extends Controller
         }
     }
 
-    public function update(Request $request, Product $product)
+    /**
+     * @OA\Put(
+     *      path="/api/v1/products/{product}",
+     *      operationId="updateProduct",
+     *      tags={"Products"},
+     *      summary="Update existing product",
+     *      description="Updates product data",
+     *      security={{"sanctum":{}}},
+     *      @OA\Parameter(
+     *          name="product",
+     *          description="Product id",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(property="sku", type="string", example="SKU-1001-B"),
+     *              @OA\Property(property="name", type="string", example="Widget B"),
+     *              @OA\Property(property="description", type="string", example="An updated widget"),
+     *              @OA\Property(property="unit", type="string", example="box"),
+     *              @OA\Property(property="status", type="string", enum={"active", "inactive"}, example="active"),
+     *              @OA\Property(property="low_stock_threshold", type="integer", example=20)
+     *          )
+     *      ),
+     *      @OA\Response(response=200, description="Successful operation"),
+     *      @OA\Response(response=401, description="Unauthenticated"),
+     *      @OA\Response(response=403, description="Forbidden"),
+     *      @OA\Response(response=404, description="Resource Not Found"),
+     *      @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function update(UpdateProductRequest $request, Product $product)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'sku' => 'sometimes|string|max:255',
-                'name' => 'sometimes|string|max:255',
-                'status' => 'sometimes|in:active,inactive',
-                'low_stock_threshold' => 'sometimes|integer|min:0'
+            $dto = ProductDTO::fromRequest($request);
+            $updatedProduct = $this->productService->updateProduct($product, $dto);
+
+            return response()->json([
+                'success' => true, 
+                'data' => $updatedProduct
             ]);
-
-            if ($validator->fails()) {
-                return response()->json(['success' => false, 'message' => 'Validation error', 'errors' => $validator->errors()], 422);
-            }
-
-            $product->update($request->all());
-
-            return response()->json(['success' => true, 'data' => $product]);
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred.',
@@ -93,12 +190,37 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * @OA\Delete(
+     *      path="/api/v1/products/{product}",
+     *      operationId="deleteProduct",
+     *      tags={"Products"},
+     *      summary="Delete existing product",
+     *      description="Deletes a record and returns no content",
+     *      security={{"sanctum":{}}},
+     *      @OA\Parameter(
+     *          name="product",
+     *          description="Product id",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=200, description="Successful operation"),
+     *      @OA\Response(response=401, description="Unauthenticated"),
+     *      @OA\Response(response=403, description="Forbidden"),
+     *      @OA\Response(response=404, description="Resource Not Found")
+     * )
+     */
     public function destroy(Product $product)
     {
         try {
-            $product->delete();
-            return response()->json(['success' => true, 'message' => 'Product deleted successfully']);
-            } catch (\Exception $e) {
+            $this->productService->deleteProduct($product);
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Product deleted successfully'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred.',

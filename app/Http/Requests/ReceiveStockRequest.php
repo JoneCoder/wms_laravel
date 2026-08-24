@@ -17,6 +17,7 @@ class ReceiveStockRequest extends FormRequest
             'product_id' => 'required|integer|exists:products,id',
             'location_id' => 'required|integer|exists:locations,id',
             'quantity' => 'required|integer|min:1',
+            'reference_number' => 'nullable|string|max:255',
         ];
     }
 }

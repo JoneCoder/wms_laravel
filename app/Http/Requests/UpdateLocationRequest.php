@@ -23,7 +23,10 @@ class UpdateLocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'code' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
+            'type' => 'sometimes|in:bin,rack,shelf',
+            'status' => 'sometimes|in:active,inactive'
         ];
     }
 }

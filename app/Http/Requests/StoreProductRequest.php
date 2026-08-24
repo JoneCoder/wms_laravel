@@ -23,7 +23,12 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'sku' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'status' => 'nullable|in:active,inactive',
+            'low_stock_threshold' => 'nullable|integer|min:0'
         ];
     }
 }

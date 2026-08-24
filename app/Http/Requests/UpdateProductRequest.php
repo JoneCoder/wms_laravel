@@ -23,7 +23,12 @@ class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'sku' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'status' => 'sometimes|in:active,inactive',
+            'low_stock_threshold' => 'sometimes|integer|min:0'
         ];
     }
 }

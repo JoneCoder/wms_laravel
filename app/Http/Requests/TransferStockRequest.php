@@ -18,6 +18,7 @@ class TransferStockRequest extends FormRequest
             'source_location_id' => 'required|integer|exists:locations,id',
             'destination_location_id' => 'required|integer|exists:locations,id|different:source_location_id',
             'quantity' => 'required|integer|min:1',
+            'reference_number' => 'nullable|string|max:255',
         ];
     }
 }
