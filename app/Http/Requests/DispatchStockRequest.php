@@ -14,7 +14,13 @@ class DispatchStockRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|integer|exists:products,id',
+            'product_id' => [
+                'required',
+                'integer',
+                \Illuminate\Validation\Rule::exists('products', 'id')->where(function ($query) {
+                    $query->where('status', 'active');
+                }),
+            ],
             'location_id' => 'required|integer|exists:locations,id',
             'quantity' => 'required|integer|min:1',
             'reference_number' => 'nullable|string|max:255',

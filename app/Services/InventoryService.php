@@ -5,18 +5,18 @@ namespace App\Services;
 use App\DTOs\ReceiveStockDTO;
 use App\DTOs\TransferStockDTO;
 use App\DTOs\DispatchStockDTO;
-use App\Models\Inventory;
-use App\Models\Product;
-use App\Models\StockMovement;
 use App\Repositories\Contracts\InventoryRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Jobs\CheckLowStock;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class InventoryService
 {
     public function __construct(
-        protected InventoryRepositoryInterface $inventoryRepository
+        protected InventoryRepositoryInterface $inventoryRepository,
+        protected ProductRepositoryInterface $productRepository
     ) {}
 
     public function getInventory(int $perPage = 20, ?string $search = null): LengthAwarePaginator
@@ -31,17 +31,18 @@ class InventoryService
     public function receive(ReceiveStockDTO $dto, ?string $referenceNumber = null)
     {
         return DB::transaction(function () use ($dto, $referenceNumber) {
-            $inventory = Inventory::firstOrCreate(
+            $this->inventoryRepository->firstOrCreate(
                 ['product_id' => $dto->product_id, 'location_id' => $dto->location_id],
                 ['quantity' => 0]
             );
 
             // Pessimistic locking to prevent race conditions during update
-            $inventory = Inventory::where('id', $inventory->id)->lockForUpdate()->first();
-            $inventory->quantity += $dto->quantity;
-            $inventory->save();
+            $inventory = $this->inventoryRepository->getLockedForUpdate($dto->product_id, $dto->location_id);
+            $this->inventoryRepository->update($inventory, [
+                'quantity' => $inventory->quantity + $dto->quantity
+            ]);
 
-            $movement = StockMovement::create([
+            $movement = $this->inventoryRepository->createMovement([
                 'product_id' => $dto->product_id,
                 'destination_location_id' => $dto->location_id,
                 'quantity' => $dto->quantity,
@@ -51,6 +52,7 @@ class InventoryService
             ]);
 
             $this->triggerLowStockCheck($dto->product_id);
+            $this->clearInventoryCache();
 
             return ['inventory' => $inventory, 'movement' => $movement];
         });
@@ -60,30 +62,29 @@ class InventoryService
     {
         return DB::transaction(function () use ($dto, $referenceNumber) {
             // Lock source inventory
-            $sourceInventory = Inventory::where('product_id', $dto->product_id)
-                ->where('location_id', $dto->source_location_id)
-                ->lockForUpdate()
-                ->first();
+            $sourceInventory = $this->inventoryRepository->getLockedForUpdate($dto->product_id, $dto->source_location_id);
 
             if (!$sourceInventory || $sourceInventory->quantity < $dto->quantity) {
                 throw new \Exception('Insufficient inventory at source location.');
             }
 
             // Ensure destination exists and lock it
-            $destInventory = Inventory::firstOrCreate(
+            $this->inventoryRepository->firstOrCreate(
                 ['product_id' => $dto->product_id, 'location_id' => $dto->destination_location_id],
                 ['quantity' => 0]
             );
-            $destInventory = Inventory::where('id', $destInventory->id)->lockForUpdate()->first();
+            $destInventory = $this->inventoryRepository->getLockedForUpdate($dto->product_id, $dto->destination_location_id);
 
             // Perform transfer
-            $sourceInventory->quantity -= $dto->quantity;
-            $sourceInventory->save();
+            $this->inventoryRepository->update($sourceInventory, [
+                'quantity' => $sourceInventory->quantity - $dto->quantity
+            ]);
 
-            $destInventory->quantity += $dto->quantity;
-            $destInventory->save();
+            $this->inventoryRepository->update($destInventory, [
+                'quantity' => $destInventory->quantity + $dto->quantity
+            ]);
 
-            $movement = StockMovement::create([
+            $movement = $this->inventoryRepository->createMovement([
                 'product_id' => $dto->product_id,
                 'source_location_id' => $dto->source_location_id,
                 'destination_location_id' => $dto->destination_location_id,
@@ -93,6 +94,8 @@ class InventoryService
                 'user_id' => auth()->id(),
             ]);
 
+            $this->clearInventoryCache();
+
             return ['source_inventory' => $sourceInventory, 'destination_inventory' => $destInventory, 'movement' => $movement];
         });
     }
@@ -100,19 +103,17 @@ class InventoryService
     public function dispatchStock(DispatchStockDTO $dto, ?string $referenceNumber = null)
     {
         return DB::transaction(function () use ($dto, $referenceNumber) {
-            $inventory = Inventory::where('product_id', $dto->product_id)
-                ->where('location_id', $dto->location_id)
-                ->lockForUpdate()
-                ->first();
+            $inventory = $this->inventoryRepository->getLockedForUpdate($dto->product_id, $dto->location_id);
 
             if (!$inventory || $inventory->quantity < $dto->quantity) {
                 throw new \Exception('Insufficient inventory.');
             }
 
-            $inventory->quantity -= $dto->quantity;
-            $inventory->save();
+            $this->inventoryRepository->update($inventory, [
+                'quantity' => $inventory->quantity - $dto->quantity
+            ]);
 
-            $movement = StockMovement::create([
+            $movement = $this->inventoryRepository->createMovement([
                 'product_id' => $dto->product_id,
                 'source_location_id' => $dto->location_id,
                 'quantity' => $dto->quantity,
@@ -122,6 +123,7 @@ class InventoryService
             ]);
 
             $this->triggerLowStockCheck($dto->product_id);
+            $this->clearInventoryCache();
 
             return ['inventory' => $inventory, 'movement' => $movement];
         });
@@ -129,10 +131,18 @@ class InventoryService
 
     protected function triggerLowStockCheck(int $productId)
     {
-        $product = Product::find($productId);
+        $product = $this->productRepository->findById($productId);
+
         if ($product) {
-            $totalQty = Inventory::where('product_id', $productId)->sum('quantity');
+            $totalQty = $this->inventoryRepository->getTotalQuantityByProduct($productId);
             CheckLowStock::dispatch($product, $totalQty);
+        }
+    }
+
+    protected function clearInventoryCache()
+    {
+        if (auth()->check() && auth()->user()->organization_id) {
+            Cache::tags(['inventory_org_' . auth()->user()->organization_id])->flush();
         }
     }
 }

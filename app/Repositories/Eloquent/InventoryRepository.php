@@ -17,7 +17,7 @@ class InventoryRepository implements InventoryRepositoryInterface
         $searchKey = $search ? "_search_" . md5($search) : "";
         $cacheKey = "inventory_org_{$orgId}_page_{$page}_per_{$perPage}{$searchKey}";
 
-        return Cache::remember($cacheKey, 60, function () use ($perPage, $search) {
+        return Cache::tags(['inventory_org_' . $orgId])->remember($cacheKey, 60, function () use ($perPage, $search) {
             return Inventory::with(['product', 'location.warehouse'])
                 ->when($search, function ($query, $search) {
                     $query->whereHas('product', function ($q) use ($search) {
@@ -45,5 +45,34 @@ class InventoryRepository implements InventoryRepositoryInterface
             })
             ->latest()
             ->paginate($perPage);
+    }
+
+    public function firstOrCreate(array $attributes, array $values = [])
+    {
+        return Inventory::firstOrCreate($attributes, $values);
+    }
+
+    public function getLockedForUpdate(int $productId, int $locationId)
+    {
+        return Inventory::where('product_id', $productId)
+            ->where('location_id', $locationId)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    public function update($inventory, array $data)
+    {
+        $inventory->update($data);
+        return $inventory;
+    }
+
+    public function createMovement(array $data)
+    {
+        return StockMovement::create($data);
+    }
+
+    public function getTotalQuantityByProduct(int $productId): int
+    {
+        return Inventory::where('product_id', $productId)->sum('quantity');
     }
 }

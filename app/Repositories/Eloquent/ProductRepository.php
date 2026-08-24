@@ -34,4 +34,9 @@ class ProductRepository implements ProductRepositoryInterface
     {
         return $product->delete();
     }
+
+    public function findById(int $id): ?Product
+    {
+        return Product::find($id);
+    }
 }

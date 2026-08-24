@@ -14,7 +14,7 @@ class AuthTest extends TestCase
 
     public function test_can_register_user_and_organization()
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'organization_name' => 'Acme Corp',
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -42,7 +42,7 @@ class AuthTest extends TestCase
             'password' => Hash::make('password'),
         ]);
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email' => 'jane@example.com',
             'password' => 'password',
         ]);

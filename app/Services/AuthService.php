@@ -19,7 +19,8 @@ class AuthService
         protected OrganizationRepositoryInterface $organizationRepository,
         protected RoleRepositoryInterface $roleRepository,
         protected PermissionRepositoryInterface $permissionRepository
-    ) {}
+    ) {
+    }
 
     public function registerUser(RegisterDTO $dto): array
     {
@@ -43,18 +44,18 @@ class AuthService
 
             // Assign permissions to roles
             $allPermissions = $this->permissionRepository->getAll();
-            
+
             // Admin gets all permissions
             $adminRole->permissions()->attach($allPermissions->pluck('id')->toArray());
 
             // Operator gets inventory specific permissions
             $operatorPermissions = $allPermissions->whereIn('name', [
-                'view_inventory', 
-                'receive_inventory', 
-                'transfer_inventory', 
+                'view_inventory',
+                'receive_inventory',
+                'transfer_inventory',
                 'dispatch_inventory'
             ])->pluck('id')->toArray();
-            
+
             $operatorRole->permissions()->attach($operatorPermissions);
 
             // Create User
