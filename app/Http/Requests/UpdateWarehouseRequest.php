@@ -35,9 +35,9 @@ class UpdateWarehouseRequest extends FormRequest
                     return $query->where('organization_id', auth()->user()->organization_id);
                 })->ignore($warehouseId),
             ],
-            'name' => 'sometimes|string|max:255',
-            'address' => 'nullable|string',
-            'status' => 'sometimes|in:active,inactive'
+            'name' => ['sometimes', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'status' => ['sometimes', 'in:active,inactive']
         ];
     }
 }

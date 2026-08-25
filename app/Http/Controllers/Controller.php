@@ -21,7 +21,9 @@ namespace App\Http\Controllers;
  *     scheme="bearer"
  * )
  */
+use App\Traits\ApiResponseTrait;
+
 abstract class Controller
 {
-    //
+    use ApiResponseTrait;
 }

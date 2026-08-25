@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class PermissionController extends Controller
 {
@@ -26,19 +27,14 @@ class PermissionController extends Controller
      *       )
      *     )
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
-            return response()->json([
-                'success' => true,
-                'data' => $this->permissionService->getAllPermissions()
-            ]);
+            return $this->successResponse('Success', $this->permissionService->getAllPermissions()
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while fetching permissions.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred while fetching permissions.', $e->getMessage()
+            , 500);
         }
     }
 }

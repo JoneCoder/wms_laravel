@@ -11,6 +11,7 @@ use App\Http\Requests\ReceiveStockRequest;
 use App\Http\Requests\TransferStockRequest;
 use App\Http\Requests\DispatchStockRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class InventoryController extends Controller
 {
@@ -38,23 +39,16 @@ class InventoryController extends Controller
      *      @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
             $perPage = $request->per_page ?? 20;
             $search = $request->input('search');
             $inventory = $this->inventoryService->getInventory($perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $inventory
-            ]);
+            return $this->successResponse('Success', $inventory);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 
@@ -82,7 +76,7 @@ class InventoryController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function receive(ReceiveStockRequest $request)
+    public function receive(ReceiveStockRequest $request): JsonResponse
     {
         try {
             $dto = ReceiveStockDTO::fromRequest($request);
@@ -90,17 +84,9 @@ class InventoryController extends Controller
 
             $result = $this->inventoryService->receive($dto, $referenceNumber);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Stock received successfully',
-                'data' => $result
-            ]);
+            return $this->successResponse('Stock received successfully', $result);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to receive stock.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to receive stock.', $e->getMessage(), 500);
         }
     }
 
@@ -129,7 +115,7 @@ class InventoryController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function transfer(TransferStockRequest $request)
+    public function transfer(TransferStockRequest $request): JsonResponse
     {
         try {
             $dto = TransferStockDTO::fromRequest($request);
@@ -137,17 +123,9 @@ class InventoryController extends Controller
 
             $result = $this->inventoryService->transfer($dto, $referenceNumber);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Stock transferred successfully',
-                'data' => $result
-            ]);
+            return $this->successResponse('Stock transferred successfully', $result);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to transfer stock.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to transfer stock.', $e->getMessage(), 500);
         }
     }
 
@@ -175,7 +153,7 @@ class InventoryController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function dispatchStock(DispatchStockRequest $request)
+    public function dispatchStock(DispatchStockRequest $request): JsonResponse
     {
         try {
             $dto = DispatchStockDTO::fromRequest($request);
@@ -183,17 +161,9 @@ class InventoryController extends Controller
 
             $result = $this->inventoryService->dispatchStock($dto, $referenceNumber);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Stock dispatched successfully',
-                'data' => $result
-            ]);
+            return $this->successResponse('Stock dispatched successfully', $result);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to dispatch stock.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to dispatch stock.', $e->getMessage(), 500);
         }
     }
 
@@ -217,23 +187,16 @@ class InventoryController extends Controller
      *      @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function movements(Request $request)
+    public function movements(Request $request): JsonResponse
     {
         try {
             $perPage = $request->per_page ?? 20;
             $search = $request->input('search');
             $movements = $this->inventoryService->getMovements($perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $movements
-            ]);
+            return $this->successResponse('Success', $movements);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 }

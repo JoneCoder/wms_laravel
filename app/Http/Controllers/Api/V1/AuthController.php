@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -47,17 +48,9 @@ class AuthController extends Controller
             $dto = RegisterDTO::fromRequest($request);
             $data = $this->authService->registerUser($dto);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'User registered successfully',
-                'data' => $data
-            ], 201);
+            return $this->successResponse('User registered successfully', $data, 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred during registration.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred during registration.', $e->getMessage(), 500);
         }
     }
 
@@ -87,10 +80,7 @@ class AuthController extends Controller
         $throttleKey = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Too many login attempts. Please try again in ' . RateLimiter::availableIn($throttleKey) . ' seconds.',
-            ], 429);
+            return $this->errorResponse('Too many login attempts. Please try again in ' . RateLimiter::availableIn($throttleKey) . ' seconds.', null, 429);
         }
 
         try {
@@ -99,25 +89,13 @@ class AuthController extends Controller
 
             RateLimiter::clear($throttleKey);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'data' => $data
-            ]);
+            return $this->successResponse('Login successful', $data);
         } catch (ValidationException $e) {
             RateLimiter::hit($throttleKey, 300); // Lockout for 5 minutes after 5 failed attempts
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials',
-                'errors' => $e->errors()
-            ], 401);
+            return $this->errorResponse('Invalid credentials', $e->errors(), 401);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred during login.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred during login.', $e->getMessage(), 500);
         }
     }
 
@@ -132,22 +110,18 @@ class AuthController extends Controller
      *      @OA\Response(response=200, description="Logged out successfully"),
      *      @OA\Response(response=401, description="Unauthenticated")
      * )
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         try {
             $request->user()->currentAccessToken()->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully'
-            ]);
+            return $this->successResponse('Logged out successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred during logout.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred during logout.', $e->getMessage(), 500);
         }
     }
 }

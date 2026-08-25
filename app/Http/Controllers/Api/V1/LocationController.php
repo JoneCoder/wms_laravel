@@ -10,6 +10,7 @@ use App\Services\LocationService;
 use App\Http\Requests\StoreLocationRequest;
 use App\Http\Requests\UpdateLocationRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class LocationController extends Controller
 {
@@ -45,23 +46,16 @@ class LocationController extends Controller
      *      @OA\Response(response=404, description="Warehouse Not Found")
      * )
      */
-    public function index(Request $request, Warehouse $warehouse)
+    public function index(Request $request, Warehouse $warehouse): JsonResponse
     {
         try {
             $perPage = $request->per_page ?? 15;
             $search = $request->input('search');
             $locations = $this->locationService->getLocations($warehouse, $perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $locations
-            ]);
+            return $this->successResponse('Success', $locations);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 
@@ -97,22 +91,15 @@ class LocationController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(StoreLocationRequest $request, Warehouse $warehouse)
+    public function store(StoreLocationRequest $request, Warehouse $warehouse): JsonResponse
     {
         try {
             $dto = LocationDTO::fromRequest($request);
             $location = $this->locationService->createLocation($warehouse, $dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $location
-            ], 201);
+            return $this->successResponse('Location created successfully', $location, 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 
@@ -144,19 +131,12 @@ class LocationController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function show(Warehouse $warehouse, Location $location)
+    public function show(Warehouse $warehouse, Location $location): JsonResponse
     {
         try {
-            return response()->json([
-                'success' => true, 
-                'data' => $location
-            ]);
+            return $this->successResponse('Success', $location);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 
@@ -198,22 +178,15 @@ class LocationController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(UpdateLocationRequest $request, Warehouse $warehouse, Location $location)
+    public function update(UpdateLocationRequest $request, Warehouse $warehouse, Location $location): JsonResponse
     {
         try {
             $dto = LocationDTO::fromRequest($request);
             $updatedLocation = $this->locationService->updateLocation($location, $dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $updatedLocation
-            ]);
+            return $this->successResponse('Location updated successfully', $updatedLocation);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 
@@ -245,21 +218,14 @@ class LocationController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function destroy(Warehouse $warehouse, Location $location)
+    public function destroy(Warehouse $warehouse, Location $location): JsonResponse
     {
         try {
             $this->locationService->deleteLocation($location);
 
-            return response()->json([
-                'success' => true, 
-                'message' => 'Location deleted successfully'
-            ]);
+            return $this->successResponse('Location deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage(), 500);
         }
     }
 }

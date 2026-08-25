@@ -35,9 +35,9 @@ class StoreLocationRequest extends FormRequest
                     return $query->where('warehouse_id', $warehouseId);
                 }),
             ],
-            'name' => 'required|string|max:255',
-            'type' => 'nullable|in:bin,rack,shelf',
-            'status' => 'nullable|in:active,inactive'
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', 'in:bin,rack,shelf'],
+            'status' => ['nullable', 'in:active,inactive']
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Services\ProductService;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {
@@ -36,23 +37,18 @@ class ProductController extends Controller
      *      @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
             $perPage = $request->per_page ?? 15;
             $search = $request->input('search');
             $products = $this->productService->getProducts($perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $products
-            ]);
+            return $this->successResponse('Success', $products
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -82,7 +78,7 @@ class ProductController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(StoreProductRequest $request)
+    public function store(StoreProductRequest $request): JsonResponse
     {
         try {
             $dto = ProductDTO::fromRequest($request);
@@ -93,11 +89,8 @@ class ProductController extends Controller
                 'data' => $product
             ], 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -122,19 +115,14 @@ class ProductController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function show(Product $product)
+    public function show(Product $product): JsonResponse
     {
         try {
-            return response()->json([
-                'success' => true, 
-                'data' => $product
-            ]);
+            return $this->successResponse('Success', $product
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -171,22 +159,17 @@ class ProductController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(UpdateProductRequest $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         try {
             $dto = ProductDTO::fromRequest($request);
             $updatedProduct = $this->productService->updateProduct($product, $dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $updatedProduct
-            ]);
+            return $this->successResponse('Success', $updatedProduct
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -211,21 +194,15 @@ class ProductController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function destroy(Product $product)
+    public function destroy(Product $product): JsonResponse
     {
         try {
             $this->productService->deleteProduct($product);
 
-            return response()->json([
-                'success' => true, 
-                'message' => 'Product deleted successfully'
-            ]);
+            return $this->successResponse('Product deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 }

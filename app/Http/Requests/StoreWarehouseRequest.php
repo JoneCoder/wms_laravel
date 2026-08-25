@@ -32,9 +32,9 @@ class StoreWarehouseRequest extends FormRequest
                     return $query->where('organization_id', auth()->user()->organization_id);
                 }),
             ],
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string',
-            'status' => 'nullable|in:active,inactive'
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:active,inactive']
         ];
     }
 }

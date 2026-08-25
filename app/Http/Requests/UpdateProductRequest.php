@@ -35,11 +35,11 @@ class UpdateProductRequest extends FormRequest
                     return $query->where('organization_id', auth()->user()->organization_id);
                 })->ignore($productId),
             ],
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'unit' => 'nullable|string',
-            'status' => 'sometimes|in:active,inactive',
-            'low_stock_threshold' => 'sometimes|integer|min:0'
+            'name' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'unit' => ['nullable', 'string'],
+            'status' => ['sometimes', 'in:active,inactive'],
+            'low_stock_threshold' => ['sometimes', 'integer', 'min:0']
         ];
     }
 }

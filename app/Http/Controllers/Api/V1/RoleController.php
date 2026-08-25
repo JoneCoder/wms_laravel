@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
 use App\Services\RoleService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
@@ -31,23 +32,18 @@ class RoleController extends Controller
      *       )
      *     )
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
             $perPage = $request->input('per_page', 15);
             $search = $request->input('search');
             $roles = $this->roleService->paginateRoles($perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $roles
-            ]);
+            return $this->successResponse('Success', $roles
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while fetching roles.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred while fetching roles.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -71,7 +67,7 @@ class RoleController extends Controller
      *      @OA\Response(response=400, description="Bad Request")
      * )
      */
-    public function store(StoreRoleRequest $request)
+    public function store(StoreRoleRequest $request): JsonResponse
     {
         try {
             $roleDTO = RoleDTO::fromRequest($request);
@@ -82,11 +78,8 @@ class RoleController extends Controller
                 'data' => $role->load('permissions')
             ], 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while storing the role.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred while storing the role.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -114,22 +107,17 @@ class RoleController extends Controller
      *      @OA\Response(response=200, description="Successful operation")
      * )
      */
-    public function update(UpdateRoleRequest $request, Role $role)
+    public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
         try {
             $roleDTO = RoleDTO::fromRequest($request);
             $updatedRole = $this->roleService->updateRole($role, $roleDTO);
 
-            return response()->json([
-                'success' => true,
-                'data' => $updatedRole->fresh('permissions')
-            ]);
+            return $this->successResponse('Success', $updatedRole->fresh('permissions')
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while updating the role.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred while updating the role.', $e->getMessage()
+            , 500);
         }
     }
 }

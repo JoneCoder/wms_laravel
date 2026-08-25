@@ -9,6 +9,7 @@ use App\Services\WarehouseService;
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\UpdateWarehouseRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class WarehouseController extends Controller
 {
@@ -36,23 +37,18 @@ class WarehouseController extends Controller
      *      @OA\Response(response=403, description="Forbidden")
      * )
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
             $perPage = $request->per_page ?? 15;
             $search = $request->input('search');
             $warehouses = $this->warehouseService->getWarehouses($perPage, $search);
 
-            return response()->json([
-                'success' => true,
-                'data' => $warehouses
-            ]);
+            return $this->successResponse('Success', $warehouses
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -80,7 +76,7 @@ class WarehouseController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(StoreWarehouseRequest $request)
+    public function store(StoreWarehouseRequest $request): JsonResponse
     {
         try {
             $dto = WarehouseDTO::fromRequest($request);
@@ -91,11 +87,8 @@ class WarehouseController extends Controller
                 'data' => $warehouse
             ], 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -120,19 +113,14 @@ class WarehouseController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function show(Warehouse $warehouse)
+    public function show(Warehouse $warehouse): JsonResponse
     {
         try {
-            return response()->json([
-                'success' => true, 
-                'data' => $warehouse
-            ]);
+            return $this->successResponse('Success', $warehouse
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -167,22 +155,17 @@ class WarehouseController extends Controller
      *      @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(UpdateWarehouseRequest $request, Warehouse $warehouse)
+    public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): JsonResponse
     {
         try {
             $dto = WarehouseDTO::fromRequest($request);
             $updatedWarehouse = $this->warehouseService->updateWarehouse($warehouse, $dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $updatedWarehouse
-            ]);
+            return $this->successResponse('Success', $updatedWarehouse
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 
@@ -207,21 +190,15 @@ class WarehouseController extends Controller
      *      @OA\Response(response=404, description="Resource Not Found")
      * )
      */
-    public function destroy(Warehouse $warehouse)
+    public function destroy(Warehouse $warehouse): JsonResponse
     {
         try {
             $this->warehouseService->deleteWarehouse($warehouse);
 
-            return response()->json([
-                'success' => true, 
-                'message' => 'Warehouse deleted successfully'
-            ]);
+            return $this->successResponse('Warehouse deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred.',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('An error occurred.', $e->getMessage()
+            , 500);
         }
     }
 }

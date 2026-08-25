@@ -32,11 +32,11 @@ class StoreProductRequest extends FormRequest
                     return $query->where('organization_id', auth()->user()->organization_id);
                 }),
             ],
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'unit' => 'nullable|string',
-            'status' => 'nullable|in:active,inactive',
-            'low_stock_threshold' => 'nullable|integer|min:0'
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'unit' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:active,inactive'],
+            'low_stock_threshold' => ['nullable', 'integer', 'min:0']
         ];
     }
 }

@@ -38,9 +38,9 @@ class UpdateLocationRequest extends FormRequest
                     return $query->where('warehouse_id', $warehouseId);
                 })->ignore($locationId),
             ],
-            'name' => 'sometimes|string|max:255',
-            'type' => 'sometimes|in:bin,rack,shelf',
-            'status' => 'sometimes|in:active,inactive'
+            'name' => ['sometimes', 'string', 'max:255'],
+            'type' => ['sometimes', 'in:bin,rack,shelf'],
+            'status' => ['sometimes', 'in:active,inactive']
         ];
     }
 }

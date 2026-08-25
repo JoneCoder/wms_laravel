@@ -21,9 +21,9 @@ class DispatchStockRequest extends FormRequest
                     $query->where('status', 'active');
                 }),
             ],
-            'location_id' => 'required|integer|exists:locations,id',
-            'quantity' => 'required|integer|min:1',
-            'reference_number' => 'nullable|string|max:255',
+            'location_id' => ['required', 'integer', 'exists:locations,id'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
