@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -23,7 +24,14 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sku' => 'required|string|max:255',
+            'sku' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products')->where(function ($query) {
+                    return $query->where('organization_id', auth()->user()->organization_id);
+                }),
+            ],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'unit' => 'nullable|string',

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateLocationRequest extends FormRequest
 {
@@ -22,8 +23,21 @@ class UpdateLocationRequest extends FormRequest
      */
     public function rules(): array
     {
+        $warehouse = $this->route('warehouse');
+        $warehouseId = $warehouse instanceof \App\Models\Warehouse ? $warehouse->id : $warehouse;
+        
+        $location = $this->route('location');
+        $locationId = $location instanceof \App\Models\Location ? $location->id : $location;
+
         return [
-            'code' => 'sometimes|string|max:255',
+            'code' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('locations')->where(function ($query) use ($warehouseId) {
+                    return $query->where('warehouse_id', $warehouseId);
+                })->ignore($locationId),
+            ],
             'name' => 'sometimes|string|max:255',
             'type' => 'sometimes|in:bin,rack,shelf',
             'status' => 'sometimes|in:active,inactive'
