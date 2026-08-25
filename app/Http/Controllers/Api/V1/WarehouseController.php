@@ -82,10 +82,7 @@ class WarehouseController extends Controller
             $dto = WarehouseDTO::fromRequest($request);
             $warehouse = $this->warehouseService->createWarehouse($dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $warehouse
-            ], 201);
+            return $this->successResponse('Warehouse created successfully', $warehouse, 201);
         } catch (\Exception $e) {
             return $this->errorResponse('An error occurred.', $e->getMessage()
             , 500);

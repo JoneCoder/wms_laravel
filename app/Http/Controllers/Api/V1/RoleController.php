@@ -73,10 +73,7 @@ class RoleController extends Controller
             $roleDTO = RoleDTO::fromRequest($request);
             $role = $this->roleService->createRole($roleDTO, $request->user()->organization_id);
 
-            return response()->json([
-                'success' => true,
-                'data' => $role->load('permissions')
-            ], 201);
+            return $this->successResponse('Role created successfully', $role->load('permissions'), 201);
         } catch (\Exception $e) {
             return $this->errorResponse('An error occurred while storing the role.', $e->getMessage()
             , 500);

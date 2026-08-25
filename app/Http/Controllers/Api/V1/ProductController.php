@@ -84,10 +84,7 @@ class ProductController extends Controller
             $dto = ProductDTO::fromRequest($request);
             $product = $this->productService->createProduct($dto);
 
-            return response()->json([
-                'success' => true, 
-                'data' => $product
-            ], 201);
+            return $this->successResponse('Product created successfully', $product, 201);
         } catch (\Exception $e) {
             return $this->errorResponse('An error occurred.', $e->getMessage()
             , 500);
