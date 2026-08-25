@@ -1,58 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Warehouse Management System (WMS) - Laravel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📖 Project Introduction
+This is a robust and scalable Warehouse Management System (WMS) built with the Laravel framework. The system is designed to manage multiple organizations and warehouses, tracking inventory, products, and stock movements efficiently. It features a role-based access control (RBAC) system for users within each organization, allowing for secure and precise permission management. Key features include tracking products across different locations in warehouses, monitoring inventory levels, and recording every stock movement (receive, transfer, dispatch).
 
-## About Laravel
+## 🚀 Project Run and Setup (Fully Dockerized)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This project is fully Dockerized for local development and deployment. Follow these steps to set up and run the project using Docker Compose:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd wms_laravel
+   ```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. **Environment Setup:**
+   Copy the `.env.example` to `.env` and configure your environment variables (e.g., `DB_HOST=db`, `DB_USERNAME`, `DB_PASSWORD`) to match your Docker setup.
+   ```bash
+   cp .env.example .env
+   ```
 
-## Learning Laravel
+3. **Build and Start the Docker Containers:**
+   Build the Docker images and start all services (app, db, web server, etc.) in the background:
+   ```bash
+   docker-compose up -d --build
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+4. **Install Dependencies:**
+   Install the PHP dependencies via Composer inside the application container (assuming the service is named `app`):
+   ```bash
+   docker-compose exec app composer install
+   ```
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+5. **Generate Application Key:**
+   ```bash
+   docker-compose exec app php artisan key:generate
+   ```
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+6. **Database Migration and Seeding:**
+   Run the database migrations and seed the initial data:
+   ```bash
+   docker-compose exec app php artisan migrate --seed
+   ```
+   The application will now be accessible at `http://localhost:8000` (or the port defined in your `docker-compose.yml`).
 
-## Agentic Development
+7. **Run Tests:**
+   Execute the automated test suite (Feature and Unit tests) inside the container:
+   ```bash
+   docker-compose exec app php artisan test
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 📁 Project Structure
 
-```bash
-composer require laravel/boost --dev
+The project follows standard Laravel conventions with some specific domains for WMS features:
 
-php artisan boost:install
+```text
+wms_laravel/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/    # API and Web controllers
+│   │   ├── Requests/       # Form request validation
+│   │   └── Middleware/     # Custom middleware (e.g., RBAC, Tenancy)
+│   ├── Models/             # Eloquent Models (User, Organization, Warehouse, Product, etc.)
+│   └── Providers/          # Service Providers
+├── database/
+│   ├── migrations/         # Database schema definitions
+│   ├── seeders/            # Database seeders for initial data
+│   └── factories/          # Model factories for testing
+├── routes/
+│   ├── api.php             # API endpoints
+│   └── web.php             # Web routes
+├── tests/                  # PHPUnit test cases
+│   ├── Feature/            # API endpoint testing & business logic
+│   └── Unit/               # Unit testing for classes/methods
+└── ...
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## 📊 Database ERD Diagram
 
-## Contributing
+Below is the Entity Relationship Diagram (ERD) based on the database migrations:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ USER : has
+    ORGANIZATION ||--o{ ROLE : has
+    ORGANIZATION ||--o{ WAREHOUSE : has
+    ORGANIZATION ||--o{ PRODUCT : has
+    
+    ROLE ||--o{ USER : assigned_to
+    ROLE }|--|{ PERMISSION : contains
+    
+    WAREHOUSE ||--o{ LOCATION : contains
+    
+    PRODUCT ||--o{ INVENTORY : stored_in
+    LOCATION ||--o{ INVENTORY : holds
+    
+    PRODUCT ||--o{ STOCK_MOVEMENT : involves
+    LOCATION ||--o{ STOCK_MOVEMENT : source
+    LOCATION ||--o{ STOCK_MOVEMENT : destination
+    USER ||--o{ STOCK_MOVEMENT : performed_by
 
-## Code of Conduct
+    ORGANIZATION {
+        bigint id PK
+        string name
+    }
+    
+    ROLE {
+        bigint id PK
+        bigint organization_id FK
+        string name
+    }
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    PERMISSION {
+        bigint id PK
+        string name
+    }
 
-## Security Vulnerabilities
+    USER {
+        bigint id PK
+        bigint organization_id FK
+        bigint role_id FK
+        string name
+        string email
+        string password
+    }
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    WAREHOUSE {
+        bigint id PK
+        bigint organization_id FK
+        string code
+        string name
+        string address
+        string status
+    }
 
-## License
+    LOCATION {
+        bigint id PK
+        bigint organization_id FK
+        bigint warehouse_id FK
+        string code
+        string name
+        string status
+    }
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+    PRODUCT {
+        bigint id PK
+        bigint organization_id FK
+        string sku
+        string name
+        text description
+        string unit
+        string status
+        int low_stock_threshold
+    }
+
+    INVENTORY {
+        bigint id PK
+        bigint organization_id FK
+        bigint product_id FK
+        bigint location_id FK
+        int quantity
+    }
+
+    STOCK_MOVEMENT {
+        bigint id PK
+        bigint organization_id FK
+        bigint product_id FK
+        bigint source_location_id FK
+        bigint destination_location_id FK
+        int quantity
+        string type
+        string reference_number
+        bigint user_id FK
+    }
+```
+
+## 🧪 How to Test and Check API
+
+1. **Swagger Documentation:** 
+   - Interactive API documentation is available via Swagger UI. 
+   - Once the application is running, navigate to: `http://localhost:8000/api/documentation` to explore and test all available endpoints directly from your browser.
+2. **API Client:** Use tools like [Postman](https://www.postman.com/), [Insomnia](https://insomnia.rest/), or Thunder Client (VS Code Extension).
+3. **Authentication:** 
+   - Send a `POST` request to `/api/v1/auth/login` with your credentials (e.g., email and password).
+   - Copy the `access_token` from the response.
+   - For all subsequent requests, add the token to the Headers: `Authorization: Bearer <your_access_token>`.
+4. **Headers:** Always include the following header for manual API requests:
+   - `Accept: application/json`
+5. **Testing Endpoints:**
+   - Example to get products: `GET http://localhost:8000/api/v1/products`
+   - Example to record stock receiving: `POST http://localhost:8000/api/v1/inventory/receive` with appropriate JSON body.
+6. **Automated Testing:** As mentioned in the setup, you can run `docker-compose exec app php artisan test` to verify API endpoints and business logic programmatically.
