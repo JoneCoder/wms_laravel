@@ -17,7 +17,12 @@ class InventoryRepository implements InventoryRepositoryInterface
         $searchKey = $search ? "_search_" . md5($search) : "";
         $cacheKey = "inventory_org_{$orgId}_page_{$page}_per_{$perPage}{$searchKey}";
 
-        return Cache::tags(['inventory_org_' . $orgId])->remember($cacheKey, 60, function () use ($perPage, $search) {
+        $cacheTag = Cache::tags(['inventory_org_' . $orgId]);
+        if ($cacheTag->get($cacheKey) instanceof \__PHP_Incomplete_Class) {
+            $cacheTag->forget($cacheKey);
+        }
+
+        return $cacheTag->remember($cacheKey, 60, function () use ($perPage, $search) {
             return Inventory::with(['product', 'location.warehouse'])
                 ->when($search, function ($query, $search) {
                     $query->whereHas('product', function ($q) use ($search) {

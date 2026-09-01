@@ -34,16 +34,17 @@ class WmsTest extends TestCase
         $this->organization = Organization::create(['name' => 'Test Org']);
         $role = Role::create(['organization_id' => $this->organization->id, 'name' => 'admin']);
         
-        $permissions = ['receive_inventory', 'transfer_inventory', 'dispatch_inventory'];
+        $permissions = ['view_inventory', 'receive_inventory', 'transfer_inventory', 'dispatch_inventory'];
         foreach ($permissions as $p) {
             $perm = Permission::create(['name' => $p]);
             $role->permissions()->attach($perm->id);
         }
-
         $this->user = User::factory()->create([
             'organization_id' => $this->organization->id,
             'role_id' => $role->id,
         ]);
+
+        \Illuminate\Support\Facades\Cache::forget('user_permissions_' . $this->user->id);
 
         $this->actingAs($this->user);
 
@@ -150,5 +151,19 @@ class WmsTest extends TestCase
         } catch (\Exception $e) {
             $this->assertEquals('Insufficient inventory.', $e->getMessage());
         }
+    }
+
+    public function test_can_get_paginated_inventory_with_cache()
+    {
+        $service = app(InventoryService::class);
+        $service->receive(new ReceiveStockDTO($this->product->id, $this->sourceLocation->id, 50));
+
+        // First call populates cache
+        $response1 = $this->getJson('/api/v1/inventory');
+        $response1->assertStatus(200);
+
+        // Second call reads from cache
+        $response2 = $this->getJson('/api/v1/inventory');
+        $response2->assertStatus(200);
     }
 }
